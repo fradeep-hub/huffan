@@ -1,0 +1,104 @@
+#include <iostream>
+#include <queue>
+#include <vector>
+#include <unordered_map>
+
+using namespace std;
+
+// Node of a Huffman Tree
+struct Node {
+    char ch;
+    int freq;
+    Node *left, *right;
+    
+    Node(char character, int frequency) {
+        ch = character;
+        freq = frequency;
+        left = right = nullptr;
+    }
+};
+
+// Comparison object to be used to order the heap
+struct comp {
+    bool operator()(Node* l, Node* r) {
+        // highest priority item has lowest frequency
+        return l->freq > r->freq;
+    }
+};
+
+// Traverse the Huffman Tree and store Huffman Codes in a map.
+void encode(Node* root, string str, unordered_map<char, string> &huffmanCode) {
+    if (root == nullptr)
+        return;
+
+    // found a leaf node
+    if (!root->left && !root->right) {
+        huffmanCode[root->ch] = str;
+    }
+
+    encode(root->left, str + "0", huffmanCode);
+    encode(root->right, str + "1", huffmanCode);
+}
+
+// Print the Huffman Codes in preorder traversal
+void printCodes(Node* root, string str) {
+    if (root == nullptr)
+        return;
+
+    // found a leaf node
+    if (!root->left && !root->right) {
+        cout << root->ch << ": " << str << "\n";
+    }
+
+    printCodes(root->left, str + "0");
+    printCodes(root->right, str + "1");
+}
+
+// Build the Huffman Tree and generate Huffman Codes
+void buildHuffmanTree(string text, vector<int> freq) {
+    // Create a priority queue to store live nodes of Huffman tree
+    priority_queue<Node*, vector<Node*>, comp> pq;
+
+    // Create a leaf node for each character and add it to the priority queue
+    for (int i = 0; i < text.size(); i++) {
+        pq.push(new Node(text[i], freq[i]));
+    }
+
+    // Do till there is more than one node in the queue
+    while (pq.size() != 1) {
+        // Remove the two nodes of highest priority (lowest frequency) from the queue
+        Node* left = pq.top(); pq.pop();
+        Node* right = pq.top(); pq.pop();
+
+        // Create a new internal node with these two nodes as children and with frequency equal to the sum of the two nodes' frequencies
+        int sum = left->freq + right->freq;
+        Node* internalNode = new Node('\0', sum);
+        internalNode->left = left;
+        internalNode->right = right;
+        pq.push(internalNode);
+    }
+
+    // root stores pointer to root of Huffman Tree
+    Node* root = pq.top();
+
+    // Traverse the Huffman Tree and store the Huffman codes in a map
+    unordered_map<char, string> huffmanCode;
+    encode(root, "", huffmanCode);
+
+    cout << "Huffman Codes are:\n";
+    for (auto pair: huffmanCode) {
+        cout << pair.first << ": " << pair.second << "\n";
+    }
+
+    cout << "\nPreorder traversal of the Huffman Tree is:\n";
+    printCodes(root, "");
+}
+
+int main() {
+    string text = "abcdef";
+    vector<int> freq = {5, 9, 12, 13, 16, 45};
+
+    buildHuffmanTree(text, freq);
+
+    return 0;
+}
